@@ -17,7 +17,8 @@ nydus_snapshotter_version=${nydus_snapshotter_version:-"v0.13.3-multiarch"}
 containerd_dir="$(mktemp -d -t containerd-XXXXXXXXXX)/containerd"
 extra_docker_manifest_flags="${extra_docker_manifest_flags:-}"
 
-registry="${registry:-quay.io/confidential-containers/reqs-payload}"
+# registry="${registry:-quay.io/confidential-containers/reqs-payload}"
+registry="${registry:-rakusa/reqs-payload}"
 
 supported_arches=(
 	"linux/amd64"

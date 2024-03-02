@@ -8,6 +8,7 @@ INSTALL_COCO_CONTAINERD=${INSTALL_COCO_CONTAINERD:-false}
 INSTALL_OFFICIAL_CONTAINERD=${INSTALL_OFFICIAL_CONTAINERD:-false}
 INSTALL_VFIO_GPU_CONTAINERD=${INSTALL_VFIO_GPU_CONTAINERD:-false}
 INSTALL_NYDUS_SNAPSHOTTER=${INSTALL_NYDUS_SNAPSHOTTER:-true}
+INSTALL_TARDEV_SNAPSHOTTER=${INSTALL_TARDEV_SNAPSHOTTER:-false}
 
 containerd_config="/etc/containerd/config.toml"
 artifacts_dir="/opt/confidential-containers-pre-install-artifacts"
@@ -83,6 +84,23 @@ function install_nydus_snapshotter_artefacts() {
 	restart_systemd_service
 }
 
+function install_tardev_snapshotter_artefacts() {
+	echo "Copying tardev-snapshotter artifacts onto host"
+
+	# install -D -m 755 ${artifacts_dir}/opt/confidential-containers/bin/containerd-nydus-grpc /opt/confidential-containers/bin/containerd-nydus-grpc
+	# install -D -m 755 ${artifacts_dir}/opt/confidential-containers/bin/nydus-overlayfs /opt/confidential-containers/bin/nydus-overlayfs
+	# ln -sf /opt/confidential-containers/bin/nydus-overlayfs /usr/local/bin/nydus-overlayfs
+
+	install -D -m 644 ${artifacts_dir}/etc/systemd/system/tardev-snapshotter.service /etc/systemd/system/tardev-snapshotter.service
+
+	host_systemctl daemon-reload
+	host_systemctl enable tardev-snapshotter.service
+
+	configure_tardev_snapshotter_for_containerd
+
+	restart_systemd_service
+}
+
 function install_artifacts() {
 	if [ "${INSTALL_COCO_CONTAINERD}" = "true" ]; then
 		install_coco_containerd_artefacts
@@ -98,6 +116,10 @@ function install_artifacts() {
 
 	if [ "${INSTALL_NYDUS_SNAPSHOTTER}" = "true" ]; then
 		install_nydus_snapshotter_artefacts
+	fi
+
+    if [ "${INSTALL_TARDEV_SNAPSHOTTER}" = "true" ]; then
+		install_tardev_snapshotter_artefacts
 	fi
 }
 
@@ -147,9 +169,39 @@ function uninstall_nydus_snapshotter_artefacts() {
 	rm -rf /var/lib/containerd-nydus/*
 }	
 
+function uninstall_tardev_snapshotter_artefacts() {
+	if host_systemctl list-units | grep -q tardev-snapshotter; then
+		for i in `host_ctr -n k8s.io snapshot --snapshotter tardev list | grep -v KEY | cut -d' ' -f1`; do
+			host_ctr -n k8s.io snapshot --snapshotter tardev rm $i || true
+		done
+
+		remove_tardev_snapshotter_from_containerd
+		host_systemctl disable --now tardev-snapshotter.service
+		rm -rf /etc/systemd/system/tardev-snapshotter.service
+
+		restart_systemd_service
+	fi
+
+	echo "Removing tardev-snapshotter artifacts from host"
+	# rm -f /opt/confidential-containers/bin/containerd-nydus-grpc
+	# rm -f /opt/confidential-containers/bin/nydus-overlayfs
+	# rm -f /usr/local/bin/nydus-overlayfs
+	# rm -f /opt/confidential-containers/share/nydus-snapshotter/config-coco-guest-pulling.toml
+
+	# We can do this here as we're sure that only the nydus-snapshotter is
+	# installing something in the /opt/confidential-containers/share
+	# directory
+    rm -rf /var/lib/containerd/io.containerd.snapshotter.v1.tardev/*
+}	
+
+
 function uninstall_artifacts() {
 	if [ "${INSTALL_NYDUS_SNAPSHOTTER}" = "true" ]; then
 		uninstall_nydus_snapshotter_artefacts
+	fi
+
+    if [ "${INSTALL_TARDEV_SNAPSHOTTER}" = "true" ]; then
+		uninstall_tardev_snapshotter_artefacts
 	fi
 
 	if [ "${INSTALL_COCO_CONTAINERD}" = "true" ] || [ "${INSTALL_OFFICIAL_CONTAINERD}" = "true" ] || [ "${INSTALL_VFIO_GPU_CONTAINERD}" = "true" ]; then
@@ -204,6 +256,47 @@ EOF
 
 }
 
+function configure_tardev_snapshotter_for_containerd() {
+	echo "configure tardev snapshotter for containerd"
+
+	containerd_imports_path="/etc/containerd/config.toml.d"
+
+	echo "Create ${containerd_imports_path}"
+	mkdir -p "${containerd_imports_path}"
+
+	echo "Drop-in the tardev configuration"
+	cat << EOF | tee "${containerd_imports_path}"/tardev-snapshotter.toml
+[proxy_plugins]
+  [proxy_plugins.tardev]
+    type = "snapshot"
+    address = "/run/containerd/tardev-snapshotter.sock"
+EOF
+	if grep -q "^imports = " "$containerd_config"; then
+		sed -i -e "s|^imports = \[\(.*\)\]|imports = [\"${containerd_imports_path}/tardev-snapshotter.toml\", \1]|g" ${containerd_config}
+		sed -i -e "s|, ]|]|g" ${containerd_config}
+	else
+		sed -i -e "1s|^|imports = [\"${containerd_imports_path}/tardev-snapshotter.toml\"]\n|" ${containerd_config}
+	fi
+
+	# Annotations should be passed down to the remote snapshotter in order to
+	# make it work. This can be done by setting `disable_snapshot_annotations = false`
+	# in the containerd's config.toml.
+	if grep -q 'disable_snapshot_annotations' "$containerd_config"; then
+		sed -i -e "s|disable_snapshot_annotations = true|disable_snapshot_annotations = false|" \
+			"${containerd_config}"
+	else
+		# In case the property does not exist, let's append it to the
+		# [plugins."io.containerd.grpc.v1.cri".containerd] section.
+		sed -i '/\[plugins\..*\.containerd\]/a'"# ${snapshot_annotations_marker}"'\ndisable_snapshot_annotations = false' \
+			"${containerd_config}"
+	fi
+
+	# Finally if for some unknown reason the property is still not set, let's
+	# fail the installation.
+	grep -q 'disable_snapshot_annotations = false' "${containerd_config}"
+
+}
+
 function remove_nydus_snapshotter_from_containerd() {
 	echo "Remove nydus snapshotter from containerd"
 
@@ -211,6 +304,25 @@ function remove_nydus_snapshotter_from_containerd() {
 
 	rm -f "${containerd_imports_path}/nydus-snapshotter.toml"
 	sed -i -e "s|\"${containerd_imports_path}/nydus-snapshotter.toml\"||g" ${containerd_config}
+	sed -i -e "s|, ]|]|g" ${containerd_config}
+
+	if grep -q "${snapshot_annotations_marker}" "${containerd_config}"; then
+		sed -i '/'"${snapshot_annotations_marker}"'/d' \
+			"${containerd_config}"
+		sed -i '/disable_snapshot_annotations = false/d' \
+			"${containerd_config}"
+	else
+		sed -i -e "s|disable_snapshot_annotations = false|disable_snapshot_annotations = true|" ${containerd_config}
+	fi
+}
+
+function remove_tardev_snapshotter_from_containerd() {
+	echo "Remove tardev snapshotter from containerd"
+
+	containerd_imports_path="/etc/containerd/config.toml.d"
+
+	rm -f "${containerd_imports_path}/tardev-snapshotter.toml"
+	sed -i -e "s|\"${containerd_imports_path}/tardev-snapshotter.toml\"||g" ${containerd_config}
 	sed -i -e "s|, ]|]|g" ${containerd_config}
 
 	if grep -q "${snapshot_annotations_marker}" "${containerd_config}"; then
@@ -245,6 +357,11 @@ function main() {
 	echo "INSTALL_OFFICIAL_CONTAINERD: ${INSTALL_OFFICIAL_CONTAINERD}"
 	echo "INSTALL_VFIO_GPU_CONTAINERD: ${INSTALL_VFIO_GPU_CONTAINERD}"
 	echo "INSTALL_NYDUS_SNAPSHOTTER: ${INSTALL_NYDUS_SNAPSHOTTER}"
+    echo "INSTALL_TARDEV_SNAPSHOTTER: ${INSTALL_TARDEV_SNAPSHOTTER}"
+
+    if [ "${INSTALL_NYDUS_SNAPSHOTTER}" = "true" && "${INSTALL_TARDEV_SNAPSHOTTER}" = "true" ]; then
+        echo "INSTALL_NYDUS_SNAPSHOTTER and INSTALL_TARDEV_SNAPSHOTTER cannot be \true at the same time"
+    fi
 
 	# script requires that user is root
 	local euid=$(id -u)

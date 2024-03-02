@@ -108,6 +108,10 @@ metadata:
                   {
                     "mountPath": "/var/lib/containerd-nydus/",
                     "name": "containerd-nydus"
+                  },
+                  {
+                    "mountPath": "/var/lib/containerd/io.containerd.snapshotter.v1.tardev/",
+                    "name": "containerd-tardev"
                   }
                 ],
                 "volumes": [
@@ -145,6 +149,13 @@ metadata:
                       "type": ""
                     },
                     "name": "containerd-nydus"
+                  },
+                  {
+                    "hostPath": {
+                      "path": "/var/lib/containerd/io.containerd.snapshotter.v1.tardev/",
+                      "type": ""
+                    },
+                    "name": "containerd-tardev"
                   }
                 ]
               },
@@ -170,6 +181,10 @@ metadata:
                   {
                     "mountPath": "/var/lib/containerd-nydus/",
                     "name": "containerd-nydus"
+                  },
+                  {
+                    "mountPath": "/var/lib/containerd/io.containerd.snapshotter.v1.tardev/",
+                    "name": "containerd-tardev"
                   }
                 ],
                 "volumes": [
@@ -207,6 +222,13 @@ metadata:
                       "type": ""
                     },
                     "name": "containerd-nydus"
+                  },
+                  {
+                    "hostPath": {
+                      "path": "/var/lib/containerd/io.containerd.snapshotter.v1.tardev/",
+                      "type": ""
+                    },
+                    "name": "containerd-tardev"
                   }
                 ]
               },
@@ -217,7 +239,7 @@ metadata:
                 },
                 {
                   "name": "kata-qemu",
-                  "snapshotter": "nydus"
+                  "snapshotter": "tardev"
                 },
                 {
                   "name": "kata-qemu-tdx",
@@ -229,7 +251,7 @@ metadata:
                 },
                 {
                   "name": "kata-qemu-snp",
-                  "snapshotter": "nydus"
+                  "snapshotter": "tardev"
                 }
               ],
               "uninstallCmd": [

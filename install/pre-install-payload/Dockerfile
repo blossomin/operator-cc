@@ -98,10 +98,12 @@ ARG DESTINATION=/opt/confidential-containers-pre-install-artifacts
 ARG NODE_DESTINATION=${DESTINATION}/opt/confidential-containers
 ARG NODE_CONTAINERD_SYSTEMD_DESTINATION=${DESTINATION}/etc/systemd/system/containerd.service.d/
 ARG NODE_NYDUS_SNAPSHOTTER_SYSTEMD_DESTINATION=${DESTINATION}/etc/systemd/system/nydus-snapshotter.service
+ARG NODE_TARDEV_SNAPSHOTTER_SYSTEMD_DESTINATION=${DESTINATION}/etc/systemd/system/tardev-snapshotter.service
 
 ARG CONTAINERD_SYSTEMD_ARTIFACTS=./containerd/containerd-for-cc-override.conf
 ARG NYDUS_SNAPSHOTTER_SYSTEMD_ARTIFACTS=./remote-snapshotter/nydus-snapshotter/nydus-snapshotter.service
 ARG NYDUS_SNAPSHOTTER_ARTIFACTS=./remote-snapshotter/nydus-snapshotter/config-coco-guest-pulling.toml
+ARG TARDEV_SNAPSHOTTER_SYSTEMD_ARTIFACTS=./remote-snapshotter/tardev-snapshotter/tardev-snapshotter.service
 
 COPY --from=coco-containerd-binary-downloader ${NODE_DESTINATION}/bin/containerd ${NODE_DESTINATION}/bin/coco-containerd
 COPY --from=official-containerd-binary-downloader ${NODE_DESTINATION}/bin/containerd ${NODE_DESTINATION}/bin/official-containerd
@@ -112,6 +114,7 @@ COPY --from=nydus-binary-downloader ${NODE_DESTINATION}/bin/* ${NODE_DESTINATION
 COPY --from=kubectl-binary-downloader /usr/bin/kubectl /usr/bin/kubectl
 COPY ${CONTAINERD_SYSTEMD_ARTIFACTS} ${NODE_CONTAINERD_SYSTEMD_DESTINATION}
 COPY ${NYDUS_SNAPSHOTTER_SYSTEMD_ARTIFACTS} ${NODE_NYDUS_SNAPSHOTTER_SYSTEMD_DESTINATION}
+COPY ${TARDEV_SNAPSHOTTER_SYSTEMD_ARTIFACTS} ${NODE_TARDEV_SNAPSHOTTER_SYSTEMD_DESTINATION}
 COPY ${NYDUS_SNAPSHOTTER_ARTIFACTS} ${NODE_DESTINATION}/share/nydus-snapshotter/config-coco-guest-pulling.toml
 
 ARG CONTAINER_ENGINE_ARTIFACTS=./scripts
