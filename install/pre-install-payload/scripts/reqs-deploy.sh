@@ -87,9 +87,13 @@ function install_nydus_snapshotter_artefacts() {
 function install_tardev_snapshotter_artefacts() {
 	echo "Copying tardev-snapshotter artifacts onto host"
 
-	# install -D -m 755 ${artifacts_dir}/opt/confidential-containers/bin/containerd-nydus-grpc /opt/confidential-containers/bin/containerd-nydus-grpc
-	# install -D -m 755 ${artifacts_dir}/opt/confidential-containers/bin/nydus-overlayfs /opt/confidential-containers/bin/nydus-overlayfs
-	# ln -sf /opt/confidential-containers/bin/nydus-overlayfs /usr/local/bin/nydus-overlayfs
+	install -D -m 755 ${artifacts_dir}/opt/confidential-containers/bin/tardev-snapshotter /opt/confidential-containers/bin/tardev-snapshotter
+	install -D -m 755 ${artifacts_dir}/opt/confidential-containers/bin/utarfs /opt/confidential-containers/bin/mount.tar
+    install -D -m 755 ${artifacts_dir}/opt/confidential-containers/bin/kata-overlay /opt/confidential-containers/bin/kata-overlay
+
+    ln -sf /opt/confidential-containers/bin/tardev-snapshotter /usr/bin/tardev-snapshotter
+	ln -sf /opt/confidential-containers/bin/kata-overlay /usr/bin/kata-overlay
+    ln -sf /opt/confidential-containers/bin/mount.tar /usr/sbin/mount.tar
 
 	install -D -m 644 ${artifacts_dir}/etc/systemd/system/tardev-snapshotter.service /etc/systemd/system/tardev-snapshotter.service
 
@@ -183,10 +187,14 @@ function uninstall_tardev_snapshotter_artefacts() {
 	fi
 
 	echo "Removing tardev-snapshotter artifacts from host"
-	# rm -f /opt/confidential-containers/bin/containerd-nydus-grpc
-	# rm -f /opt/confidential-containers/bin/nydus-overlayfs
-	# rm -f /usr/local/bin/nydus-overlayfs
-	# rm -f /opt/confidential-containers/share/nydus-snapshotter/config-coco-guest-pulling.toml
+
+	rm -f /opt/confidential-containers/bin/tardev-snapshotter
+	rm -f /opt/confidential-containers/bin/mount.tar
+    rm -f /opt/confidential-containers/bin/kata-overlay
+    
+    rm -f /usr/bin/tardev-snapshotter
+	rm -f /usr/bin/kata-overlay
+    rm -f /usr/sbin/mount.tar
 
 	# We can do this here as we're sure that only the nydus-snapshotter is
 	# installing something in the /opt/confidential-containers/share

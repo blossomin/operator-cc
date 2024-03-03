@@ -13,6 +13,8 @@ official_containerd_version=${official_containerd_version:-"1.7.7"}
 vfio_gpu_containerd_repo=${vfio_gpu_containerd_repo:-"https://github.com/confidential-containers/containerd"}
 vfio_gpu_containerd_version=${vfio_gpu_containerd_version:-"1.7.0.0"}
 nydus_snapshotter_repo=${nydus_snapshotter_repo:-"https://github.com/fidencio/nydus-snapshotter"}
+tardev_snapshotter_repo=${tardev_snapshotter_repo:-"https://github.com/microsoft/kata-containers"}
+tardev_snapshotter_branch=${tardev_snapshotter_branch:-"msft-main"}
 nydus_snapshotter_version=${nydus_snapshotter_version:-"v0.13.3-multiarch"}
 containerd_dir="$(mktemp -d -t containerd-XXXXXXXXXX)/containerd"
 extra_docker_manifest_flags="${extra_docker_manifest_flags:-}"
@@ -71,6 +73,8 @@ function build_payload() {
 			--build-arg VFIO_GPU_CONTAINERD_REPO="${vfio_gpu_containerd_repo}" \
 			--build-arg NYDUS_SNAPSHOTTER_VERSION="${nydus_snapshotter_version}" \
 			--build-arg NYDUS_SNAPSHOTTER_REPO="${nydus_snapshotter_repo}" \
+            --build-arg TARDEV_SNAPSHOTTER_REPO="${tardev_snapshotter_repo}" \
+            --build-arg TARDEV_SNAPSHOTTER_BRANCH="${tardev_snapshotter_branch}" \
 			-t "${registry}:${kernel_arch}-${tag}" \
 			--platform="${arch}" \
 			--load \

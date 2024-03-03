@@ -76,6 +76,35 @@ RUN mkdir -p ${NODE_DESTINATION}/bin && \
     mv /nydus-snapshotter/* ${NODE_DESTINATION}/bin/ && \
     rm -rf /nydus-snapshotter
 
+
+#### tardev snapshotter
+FROM rust:1.7.0-alpine AS tardev-builder
+ARG ARCH
+ARG TARDEV_SNAPSHOTTER_REPO
+ARG TARDEV_SNAPSHOTTER_BRANCH
+
+ARG DESTINATION=/opt/confidential-containers-pre-install-artifacts
+ARG NODE_DESTINATION=${DESTINATION}/opt/confidential-containers
+
+RUN apk add --no-cache git && \
+    git clone --branch ${TARDEV_SNAPSHOTTER_BRANCH} --depth=1 ${TARDEV_SNAPSHOTTER_REPO} ${DESTINATION}/kata-containers && \
+    mkdir -p ${NODE_DESTINATION}/bin && \
+    mkdir -p ${DESTINATION}/tardev-snapshotter && \
+    mv ${DESTINATION}/kata-containers/src/tardev-snapshotter ${DESTINATION}/tardev-snapshotter/ && \
+    mv ${DESTINATION}/kata-containers/src/utarfs ${DESTINATION}/tardev-snapshotter/ && \
+    mv ${DESTINATION}/kata-containers/src/overlay ${DESTINATION}/tardev-snapshotter/ && \
+    cp -r ${TARDEV_SNAPSHOTTER_SRC}/* ${DESTINATION}/tardev-snapshotter && \
+    cd ${DESTINATION}/tardev-snapshotter/tardev-snapshotter && \
+    make && \
+    mv tarage/release/tardev-snapshotter ${NODE_DESTINATION}/bin/ && \
+    cd ${DESTINATION}/tardev-snapshotter/utarfs && \
+    cargo build --release && \
+    mv target/release/utarfs ${NODE_DESTINATION}/bin/ && \
+    cd ${DESTINATION}/tardev-snapshotter/overlay && \
+    cargo build --release && \
+    mv target/release/kata-overlay ${NODE_DESTINATION}/bin/ && \
+    rm -rf ${DESTINATION}/tardev-snapshotter
+
 #### kubectl
 
 FROM base as kubectl-binary-downloader
