@@ -8,7 +8,8 @@ resources:
 
 images:
 - name: quay.io/confidential-containers/reqs-payload
-  newTag: latest
+  newName: rakusa/reqs-payload 
+  newTag: x86_64-6ab083ffa1f3ce8cedeb5fbdbcff905a6597e235
 - name: quay.io/kata-containers/kata-deploy
   newName: quay.io/kata-containers/kata-deploy-ci
   newTag: kata-containers-latest
