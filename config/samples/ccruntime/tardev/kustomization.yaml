@@ -9,18 +9,24 @@ resources:
 images:
 - name: quay.io/confidential-containers/reqs-payload
   newName: rakusa/reqs-payload 
-  newTag: x86_64-6ab083ffa1f3ce8cedeb5fbdbcff905a6597e235
+  newTag: x86_64-45efc1afe4ab0e749e9c2505b7dcc7ff2b3869f6
 - name: quay.io/kata-containers/kata-deploy
-  newName: quay.io/kata-containers/kata-deploy-ci
-  newTag: kata-containers-latest
+  newName: rakusa/runtime-image
+  newTag: kata-containers-be767358668f59912858c20c00d6fb9ab0a66e46-amd64
 
 patches:
 - patch: |-
     - op: replace
       path: /spec/config/runtimeClasses
       value:
+      # - name: "kata-clh"
+      #   snapshotter: "tardev"
       - name: "kata-qemu"
         snapshotter: "tardev"
+      # - name: "kata-qemu-tdx"
+      #   snapshotter: "nydus"
+      # - name: "kata-qemu-sev"
+      #   snapshotter: "nydus"
       - name: "kata-qemu-snp"
         snapshotter: "tardev"
     - op: add
@@ -37,5 +43,9 @@ patches:
         # the case, please, set this variable to `true`
         - name: "INSTALL_OFFICIAL_CONTAINERD"
           value: "false"
+        - name: "INSTALL_NYDUS_SNAPSHOTTER"
+          value: "false"
+        - name: "INSTALL_TARDEV_SNAPSHOTTER"
+          value: "true"
   target:
     kind: CcRuntime

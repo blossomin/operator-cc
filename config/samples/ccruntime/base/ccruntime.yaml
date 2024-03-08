@@ -24,6 +24,10 @@ spec:
         name: kata-artifacts
       - mountPath: /usr/local/bin/
         name: local-bin
+      - mountPath: /opt/snapshotter/bin/
+        name: opt-bin
+      - mountPath: /opt/snapshotter/sbin/
+        name: opt-sbin
     installerVolumes:
       - hostPath:
           path: /etc/crio/
@@ -41,6 +45,14 @@ spec:
           path: /usr/local/bin/
           type: ""
         name: local-bin
+      - hostPath:
+          path: /usr/bin/
+          type: ""
+        name: opt-bin
+      - hostPath:
+          path: /usr/sbin/
+          type: ""
+        name: opt-sbin
     installCmd: ["/opt/kata-artifacts/scripts/kata-deploy.sh", "install"]
     uninstallCmd: ["/opt/kata-artifacts/scripts/kata-deploy.sh", "cleanup"]
     cleanupCmd: ["/opt/kata-artifacts/scripts/kata-deploy.sh", "reset"]
@@ -59,6 +71,10 @@ spec:
           name: containerd-conf
         - mountPath: /usr/local/bin/
           name: local-bin
+        - mountPath: /opt/snapshotter/bin/
+          name: opt-bin
+        - mountPath: /opt/snapshotter/sbin/
+          name: opt-sbin
         - mountPath: /var/lib/containerd-nydus/
           name: containerd-nydus
         - mountPath: /var/lib/containerd/io.containerd.snapshotter.v1.tardev/
@@ -80,6 +96,14 @@ spec:
             path: /usr/local/bin/
             type: ""
           name: local-bin
+        - hostPath:
+            path: /usr/bin/
+            type: ""
+          name: opt-bin
+        - hostPath:
+            path: /usr/sbin/
+            type: ""
+          name: opt-sbin
         - hostPath:
             path: /var/lib/containerd-nydus/
             type: ""
@@ -99,6 +123,10 @@ spec:
           name: containerd-conf
         - mountPath: /usr/local/bin/
           name: local-bin
+        - mountPath: /opt/snapshotter/bin/
+          name: opt-bin
+        - mountPath: /opt/snapshotter/sbin/
+          name: opt-sbin
         - mountPath: /var/lib/containerd-nydus/
           name: containerd-nydus
         - mountPath: /var/lib/containerd/io.containerd.snapshotter.v1.tardev/
@@ -120,6 +148,14 @@ spec:
             path: /usr/local/bin/
             type: ""
           name: local-bin
+        - hostPath:
+            path: /usr/bin/
+            type: ""
+          name: opt-bin
+        - hostPath:
+            path: /usr/sbin/
+            type: ""
+          name: opt-sbin
         - hostPath:
             path: /var/lib/containerd-nydus/
             type: ""
