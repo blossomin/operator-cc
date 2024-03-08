@@ -78,7 +78,7 @@ RUN mkdir -p ${NODE_DESTINATION}/bin && \
 
 
 #### tardev snapshotter
-FROM rust:1.7.0-alpine AS tardev-builder
+FROM rust:1.72.0 AS tardev-builder
 ARG ARCH
 ARG TARDEV_SNAPSHOTTER_REPO
 ARG TARDEV_SNAPSHOTTER_BRANCH
@@ -86,17 +86,16 @@ ARG TARDEV_SNAPSHOTTER_BRANCH
 ARG DESTINATION=/opt/confidential-containers-pre-install-artifacts
 ARG NODE_DESTINATION=${DESTINATION}/opt/confidential-containers
 
-RUN apk add --no-cache git && \
+RUN apt update && apt install -y git cmake protobuf-compiler libfuse3-dev && \
     git clone --branch ${TARDEV_SNAPSHOTTER_BRANCH} --depth=1 ${TARDEV_SNAPSHOTTER_REPO} ${DESTINATION}/kata-containers && \
     mkdir -p ${NODE_DESTINATION}/bin && \
     mkdir -p ${DESTINATION}/tardev-snapshotter && \
     mv ${DESTINATION}/kata-containers/src/tardev-snapshotter ${DESTINATION}/tardev-snapshotter/ && \
     mv ${DESTINATION}/kata-containers/src/utarfs ${DESTINATION}/tardev-snapshotter/ && \
     mv ${DESTINATION}/kata-containers/src/overlay ${DESTINATION}/tardev-snapshotter/ && \
-    cp -r ${TARDEV_SNAPSHOTTER_SRC}/* ${DESTINATION}/tardev-snapshotter && \
     cd ${DESTINATION}/tardev-snapshotter/tardev-snapshotter && \
     make && \
-    mv tarage/release/tardev-snapshotter ${NODE_DESTINATION}/bin/ && \
+    mv target/release/tardev-snapshotter ${NODE_DESTINATION}/bin/ && \
     cd ${DESTINATION}/tardev-snapshotter/utarfs && \
     cargo build --release && \
     mv target/release/utarfs ${NODE_DESTINATION}/bin/ && \
@@ -139,6 +138,7 @@ COPY --from=official-containerd-binary-downloader ${NODE_DESTINATION}/bin/contai
 COPY --from=vfio-gpu-containerd-binary-downloader ${NODE_DESTINATION}/bin/containerd ${NODE_DESTINATION}/bin/vfio-gpu-containerd
 
 COPY --from=nydus-binary-downloader ${NODE_DESTINATION}/bin/* ${NODE_DESTINATION}/bin/
+COPY --from=tardev-builder ${NODE_DESTINATION}/bin/* ${NODE_DESTINATION}/bin/
 
 COPY --from=kubectl-binary-downloader /usr/bin/kubectl /usr/bin/kubectl
 COPY ${CONTAINERD_SYSTEMD_ARTIFACTS} ${NODE_CONTAINERD_SYSTEMD_DESTINATION}
