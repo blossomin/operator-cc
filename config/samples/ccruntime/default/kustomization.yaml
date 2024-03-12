@@ -10,7 +10,7 @@ images:
 - name: quay.io/confidential-containers/reqs-payload
   newTag: latest
 - name: quay.io/kata-containers/kata-deploy
-  newName: quay.io/kata-containers/kata-deploy-ci
+  newName: rakusa/runtime-pauseimage
   newTag: kata-containers-latest
 
 patches:
@@ -18,14 +18,14 @@ patches:
     - op: replace
       path: /spec/config/runtimeClasses
       value:
-      - name: "kata-clh"
-        snapshotter: "nydus"
+      # - name: "kata-clh"
+      #   snapshotter: "nydus"
       - name: "kata-qemu"
         snapshotter: "nydus"
-      - name: "kata-qemu-tdx"
-        snapshotter: "nydus"
-      - name: "kata-qemu-sev"
-        snapshotter: "nydus"
+      # - name: "kata-qemu-tdx"
+      #   snapshotter: "nydus"
+      # - name: "kata-qemu-sev"
+      #   snapshotter: "nydus"
       - name: "kata-qemu-snp"
         snapshotter: "nydus"
     - op: add
