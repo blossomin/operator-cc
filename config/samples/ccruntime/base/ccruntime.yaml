@@ -146,3 +146,5 @@ spec:
       # default: false
       - name: "INSTALL_NYDUS_SNAPSHOTTER"
         value: "true"
+      - name: "SNAPSHOTTER"
+        value: "nydus"
